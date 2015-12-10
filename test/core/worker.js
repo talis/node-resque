@@ -113,6 +113,45 @@ describe('worker', function(){
 
     });
 
+
+    describe('integration with multiple failed queues', function(){
+
+      beforeEach(function(done){
+          worker = new specHelper.NR.worker({connection: specHelper.connectionDetails, timeout: specHelper.timeout, queues: specHelper.queue, multipleFailureQueues: true}, jobs, function(){
+          done();
+        });
+      });
+
+      afterEach(function(done){
+        worker.end(function(){
+          done();
+        });
+      });
+
+      it('will not work jobs that are not defined', function(done){
+        var listener = worker.on('failure', function(q, job, failure){
+          q.should.equal(specHelper.queue);
+          String(failure).should.equal == "Error: No job defined for class 'somethingFake'";
+          worker.removeAllListeners('failure');
+          done();
+        });
+
+        queue.enqueue(specHelper.queue, "somethingFake", []);
+        worker.start();
+      });
+
+      it('will place failed jobs in the failed queue', function(done){
+        specHelper.redis.rpop(specHelper.namespace + ":" + specHelper.queue + "_failed", function(err, data){
+          data = JSON.parse(data);
+          data.queue.should.equal(specHelper.queue);
+          data.exception.should.equal('Error');
+          data.error.should.equal('No job defined for class \'somethingFake\'');
+          done();
+         });
+      });
+    });
+
+      
     describe('integration', function(){
 
       beforeEach(function(done){
