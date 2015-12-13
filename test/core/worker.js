@@ -140,6 +140,11 @@ describe('worker', function(){
         worker.start();
       });
 
+      it('will create an entry in the failed queues set', function(done) {
+        specHelper.redis.sismember('failed_queues', specHelper.namespace + ":" + specHelper.queue + "_failed").should.be.ok();
+        done();
+      });
+
       it('will place failed jobs in the failed queue', function(done){
         specHelper.redis.rpop(specHelper.namespace + ":" + specHelper.queue + "_failed", function(err, data){
           data = JSON.parse(data);
