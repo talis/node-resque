@@ -278,7 +278,7 @@ var jobs = {
 
 ## Multi Worker
 
-node-resque provides a wrapper around the `worker` object which will auto-scale the number of resque workers.  This will process more than one job at a time as long as there is idle CPU within the event loop.  For example, if you have a slow job that sends email via SMTP (with low rendering overhead), we can process many jobs at a time, but if you have a math-heavy operation, we'll stick to 1.  The `multiWorker` handles this by spawngning more and more node-resque workers and managing the pool.  
+node-resque provides a wrapper around the `worker` object which will auto-scale the number of resque workers.  This will process more than one job at a time as long as there is idle CPU within the event loop.  For example, if you have a slow job that sends email via SMTP (with low rendering overhead), we can process many jobs at a time, but if you have a math-heavy operation, we'll stick to 1.  The `multiWorker` handles this by spawngning more and more node-resque workers and managing the pool.
 
 ```javascript
 var NR = require(__dirname + "/../index.js");
@@ -290,12 +290,12 @@ var connectionDetails = {
 }
 
 var multiWorker = new NR.multiWorker({
-  connection: connectionDetails, 
+  connection: connectionDetails,
   queues: ['slowQueue'],
   minTaskProcessors:   1,
   maxTaskProcessors:   100,
   checkTimeout:        1000,
-  maxEventLoopDelay:   10,  
+  maxEventLoopDelay:   10,
   toDisconnectProcessors: true,
 }, jobs, function(){
 
@@ -310,7 +310,7 @@ var multiWorker = new NR.multiWorker({
   multiWorker.on('failure',           function(workerId, queue, job, failure){ console.log("worker["+workerId+"] job failure " + queue + " " + JSON.stringify(job) + " >> " + failure); })
   multiWorker.on('error',             function(workerId, queue, job, error){   console.log("worker["+workerId+"] error " + queue + " " + JSON.stringify(job) + " >> " + error); })
   multiWorker.on('pause',             function(workerId){                      console.log("worker["+workerId+"] paused"); })
-  
+
   // multiWorker emitters
   multiWorker.on('internalError',     function(error){                         console.log(error); })
   multiWorker.on('multiWorkerAction', function(verb, delay){                   console.log("*** checked for worker status: " + verb + " (event loop delay: " + delay + "ms)"); })
@@ -319,8 +319,30 @@ var multiWorker = new NR.multiWorker({
 });
 ```
 
+## Multiple Failed Queues
+
+Additionally, if a single failed queue proves to be to painful to manage, you can optionally have a failed queue for each queue type. Simply start your worker as such:
+
+``` javascript
+var worker = new NR.worker({
+  "connection":connectionDetails,
+  "queues":["a", "b", "c"],
+  "multipleFailureQueues": true},
+  jobs,
+  function(){ ... }
+);
+```
+
+To view the status of the failed queues in the resque-web dashboard, you will need to have resque with https://github.com/resque/resque/pull/1234 applied additionally, you will need to install a fork of the resque-web gem (https://github.com/talis/resque-web/tree/working_multiple_queues) setting the following in an initializer:
+
+``` ruby
+require 'resque/failure/redis_multi_queue'
+
+Resque::Failure.backend = Resque::Failure::RedisMultiQueue
+```
+
 ## Presentation
-This package was featued heavily in [this presentation I gave](http://blog.evantahler.com/blog/background-tasks-for-node.html) about background jobs + node.js.  It contains more examples! 
+This package was featued heavily in [this presentation I gave](http://blog.evantahler.com/blog/background-tasks-for-node.html) about background jobs + node.js.  It contains more examples!
 
 ## Acknowledgments
 Most of this code was inspired by / stolen from [coffee-resque](https://npmjs.org/package/coffee-resque) and [coffee-resque-scheduler](https://github.com/leeadkins/coffee-resque-scheduler).  Thanks!
