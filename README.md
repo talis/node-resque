@@ -1,6 +1,6 @@
 # node-resque
 
-Delayed Tasks in nodejs.  A very opinionated but compatible API with [resque](https://github.com/resque/resque) and [resque scheduler](https://github.com/resque/resque-scheduler).  Resque is a background job system based on redis.  It includes priority queus, plugins, locking, delayed jobs, and more! 
+Delayed Tasks in nodejs.  A very opinionated but compatible API with [resque](https://github.com/resque/resque) and [resque scheduler](https://github.com/resque/resque-scheduler).  Resque is a background job system based on redis.  It includes priority queus, plugins, locking, delayed jobs, and more!
 
 [![Nodei stats](https://nodei.co/npm/node-resque.png?downloads=true)](https://npmjs.org/package/node-resque)
 
@@ -158,7 +158,7 @@ You can also pass redis client directly.
 var redisClient = new Redis();
 var connectionDetails = { redis: redisClient }
 
-var worker = new NR.worker({connection: connectionDetails, queues: 'math'}, jobs, 
+var worker = new NR.worker({connection: connectionDetails, queues: 'math'}, jobs,
 
 worker.on('error', function(){
 	// handler errors
@@ -260,7 +260,7 @@ You can work with these failed jobs with the following methods:
 
 ## Failed Worker Management
 
-Sometimes a worker crashes is a *severe* way, and it doesn't get the time/chance to notify redis that it is leaving the pool (this happens all the time on PAAS providers like Heroku).  When this happens, you will not only need to extract the job from the now-zombie worker's "working on" status, but also remove the stuck worker.  To aid you in these edge cases, ``queue.cleanOldWorkers(age, callback)` is available.  
+Sometimes a worker crashes is a *severe* way, and it doesn't get the time/chance to notify redis that it is leaving the pool (this happens all the time on PAAS providers like Heroku).  When this happens, you will not only need to extract the job from the now-zombie worker's "working on" status, but also remove the stuck worker.  To aid you in these edge cases, ``queue.cleanOldWorkers(age, callback)` is available.
 
 Because there are no 'heartbeats' in resque, it is imposable for the application to know if a worker has been working on a long job or it is dead.  You are required to provide an "age" for how long a worker has been "working", and all those older than that age will be removed, and the job they are working on moved to the error queue (where you can then use `queue.retryAndRemoveFailed`) to re-enqueue the job.
 
@@ -268,7 +268,7 @@ If you know the name of a worker that should be removed, you can also call `queu
 
 ## Job Schedules
 
-You may want to use node-resque to schedule jobs every minute/hour/day, like a distributed CRON system.  There are a number of excellent node packages to help you with this, like [node-schedule](https://github.com/tejasmanohar/node-schedule) and [node-cron](https://github.com/ncb000gt/node-cron).  Node-resque makes it possible for you to use the package of your choice to schedule jobs with.  
+You may want to use node-resque to schedule jobs every minute/hour/day, like a distributed CRON system.  There are a number of excellent node packages to help you with this, like [node-schedule](https://github.com/tejasmanohar/node-schedule) and [node-cron](https://github.com/ncb000gt/node-cron).  Node-resque makes it possible for you to use the package of your choice to schedule jobs with.
 
 Assuming you are running node-resque across multiple machines, you will need to ensure that only one of your processes is actually scheduling the jobs.  To help you with this, you can inspect which of the scheduler processes is currently acting as master, and flag only the master scheduler process to run the schedule.  A full example can be found at [/examples/scheduledJobs.js](https://github.com/taskrabbit/node-resque/blob/master/examples/scheduledJobs.js), but the relevant section is:
 
@@ -282,11 +282,11 @@ scheduler.connect(function(){
 
 var queue = new NR.queue({connection: connectionDetails}, jobs, function(){
   schedule.scheduleJob('10,20,30,40,50 * * * * *', function(){ // do this job every 10 seconds, CRON style
-    // we want to ensure that only one instance of this job is scheduled in our environment at once, 
+    // we want to ensure that only one instance of this job is scheduled in our environment at once,
     // no matter how many schedulers we have running
-    if(scheduler.master){ 
+    if(scheduler.master){
       console.log(">>> enquing a job");
-      queue.enqueue('time', "ticktock", new Date().toString() ); 
+      queue.enqueue('time', "ticktock", new Date().toString() );
     }
   });
 });
@@ -381,7 +381,11 @@ var jobs = {
 
 ## Multi Worker
 
-node-resque provides a wrapper around the `worker` object which will auto-scale the number of resque workers.  This will process more than one job at a time as long as there is idle CPU within the event loop.  For example, if you have a slow job that sends email via SMTP (with low rendering overhead), we can process many jobs at a time, but if you have a math-heavy operation, we'll stick to 1.  The `multiWorker` handles this by spawning more and more node-resque workers and managing the pool.  
+<<<<<<< HEAD
+node-resque provides a wrapper around the `worker` object which will auto-scale the number of resque workers.  This will process more than one job at a time as long as there is idle CPU within the event loop.  For example, if you have a slow job that sends email via SMTP (with low rendering overhead), we can process many jobs at a time, but if you have a math-heavy operation, we'll stick to 1.  The `multiWorker` handles this by spawning more and more node-resque workers and managing the pool.
+=======
+node-resque provides a wrapper around the `worker` object which will auto-scale the number of resque workers.  This will process more than one job at a time as long as there is idle CPU within the event loop.  For example, if you have a slow job that sends email via SMTP (with low rendering overhead), we can process many jobs at a time, but if you have a math-heavy operation, we'll stick to 1.  The `multiWorker` handles this by spawngning more and more node-resque workers and managing the pool.
+>>>>>>> multiple_failed_queues
 
 ```javascript
 var NR = require(__dirname + "/../index.js");
@@ -393,13 +397,14 @@ var connectionDetails = {
 }
 
 var multiWorker = new NR.multiWorker({
-  connection: connectionDetails, 
+  connection: connectionDetails,
   queues: ['slowQueue'],
   minTaskProcessors:   1,
   maxTaskProcessors:   100,
   checkTimeout:        1000,
-  maxEventLoopDelay:   10,  
+  maxEventLoopDelay:   10,
   toDisconnectProcessors: true,
+<<<<<<< HEAD
 }, jobs);
 
 // normal worker emitters
@@ -419,10 +424,54 @@ multiWorker.on('internalError',     function(error){                         con
 multiWorker.on('multiWorkerAction', function(verb, delay){                   console.log("*** checked for worker status: " + verb + " (event loop delay: " + delay + "ms)"); });
 
 multiWorker.start();
+=======
+}, jobs, function(){
+
+  // normal worker emitters
+  multiWorker.on('start',             function(workerId){                      console.log("worker["+workerId+"] started"); })
+  multiWorker.on('end',               function(workerId){                      console.log("worker["+workerId+"] ended"); })
+  multiWorker.on('cleaning_worker',   function(workerId, worker, pid){         console.log("cleaning old worker " + worker); })
+  multiWorker.on('poll',              function(workerId, queue){               console.log("worker["+workerId+"] polling " + queue); })
+  multiWorker.on('job',               function(workerId, queue, job){          console.log("worker["+workerId+"] working job " + queue + " " + JSON.stringify(job)); })
+  multiWorker.on('reEnqueue',         function(workerId, queue, job, plugin){  console.log("worker["+workerId+"] reEnqueue job (" + plugin + ") " + queue + " " + JSON.stringify(job)); })
+  multiWorker.on('success',           function(workerId, queue, job, result){  console.log("worker["+workerId+"] job success " + queue + " " + JSON.stringify(job) + " >> " + result); })
+  multiWorker.on('failure',           function(workerId, queue, job, failure){ console.log("worker["+workerId+"] job failure " + queue + " " + JSON.stringify(job) + " >> " + failure); })
+  multiWorker.on('error',             function(workerId, queue, job, error){   console.log("worker["+workerId+"] error " + queue + " " + JSON.stringify(job) + " >> " + error); })
+  multiWorker.on('pause',             function(workerId){                      console.log("worker["+workerId+"] paused"); })
+
+  // multiWorker emitters
+  multiWorker.on('internalError',     function(error){                         console.log(error); })
+  multiWorker.on('multiWorkerAction', function(verb, delay){                   console.log("*** checked for worker status: " + verb + " (event loop delay: " + delay + "ms)"); })
+
+  multiWorker.start();
+});
+```
+
+## Multiple Failed Queues
+
+Additionally, if a single failed queue proves to be to painful to manage, you can optionally have a failed queue for each queue type. Simply start your worker as such:
+
+``` javascript
+var worker = new NR.worker({
+  "connection":connectionDetails,
+  "queues":["a", "b", "c"],
+  "multipleFailureQueues": true},
+  jobs,
+  function(){ ... }
+);
+```
+
+To view the status of the failed queues in the resque-web dashboard, you will need to have resque with https://github.com/resque/resque/pull/1234 applied additionally, you will need to install a fork of the resque-web gem (https://github.com/talis/resque-web/tree/working_multiple_queues) setting the following in an initializer:
+
+``` ruby
+require 'resque/failure/redis_multi_queue'
+
+Resque::Failure.backend = Resque::Failure::RedisMultiQueue
 ```
 
 ## Presentation
-This package was featured heavily in [this presentation I gave](http://blog.evantahler.com/blog/background-tasks-for-node.html) about background jobs + node.js.  It contains more examples! 
+
+This package was featured heavily in [this presentation I gave](http://blog.evantahler.com/blog/background-tasks-for-node.html) about background jobs + node.js.  It contains more examples!
 
 ## Acknowledgments
 Most of this code was inspired by / stolen from [coffee-resque](https://npmjs.org/package/coffee-resque) and [coffee-resque-scheduler](https://github.com/leeadkins/coffee-resque-scheduler).  Thanks!
