@@ -130,8 +130,7 @@ describe('worker', function(){
 
     describe('integration with multiple failed queues', function(){
         beforeEach(function(done){
-            worker = new specHelper.NR.worker({connection: specHelper.connectionDetails, timeout: specHelper.timeout, queues: specHelper.queue, failureBackendImplementation: 'redis_multiple_queue'}, jobs)
-            worker = new specHelper.NR.worker({connection: specHelper.connectionDetails, timeout: specHelper.timeout, queues: specHelper.queue}, jobs);
+            worker = new specHelper.NR.worker({connection: specHelper.connectionDetails, timeout: specHelper.timeout, queues: specHelper.queue, failureBackendImplementation: 'redis_multiple_queue'}, jobs);
             worker.connect(done);
         });
         
@@ -151,8 +150,8 @@ describe('worker', function(){
         worker.start();
       });
 
+      // not sure that this works???
       it('will create an entry in the failed queues set', function(done) {
-          console.log(specHelper.redis.sismember('failed_queues', specHelper.namespace + ":" + specHelper.queue + "_failed"));
         specHelper.redis.sismember('failed_queues', specHelper.namespace + ":" + specHelper.queue + "_failed").should.be.true;
         done();
       });
