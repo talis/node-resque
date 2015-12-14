@@ -129,19 +129,16 @@ describe('worker', function(){
 
 
     describe('integration with multiple failed queues', function(){
-
-      beforeEach(function(done){
-          worker = new specHelper.NR.worker({connection: specHelper.connectionDetails, timeout: specHelper.timeout, queues: specHelper.queue, multipleFailureQueues: true}, jobs, function(){
-          done();
+        beforeEach(function(done){
+            worker = new specHelper.NR.worker({connection: specHelper.connectionDetails, timeout: specHelper.timeout, queues: specHelper.queue, failureBackendImplementation: 'redis_multiple_queue'}, jobs)
+            worker = new specHelper.NR.worker({connection: specHelper.connectionDetails, timeout: specHelper.timeout, queues: specHelper.queue}, jobs);
+            worker.connect(done);
         });
-      });
-
-      afterEach(function(done){
-        worker.end(function(){
-          done();
+        
+        afterEach(function(done){
+            worker.end(done);
         });
-      });
-
+            
       it('will not work jobs that are not defined', function(done){
         var listener = worker.on('failure', function(q, job, failure){
           q.should.equal(specHelper.queue);
@@ -155,7 +152,8 @@ describe('worker', function(){
       });
 
       it('will create an entry in the failed queues set', function(done) {
-        specHelper.redis.sismember('failed_queues', specHelper.namespace + ":" + specHelper.queue + "_failed").should.be.ok();
+          console.log(specHelper.redis.sismember('failed_queues', specHelper.namespace + ":" + specHelper.queue + "_failed"));
+        specHelper.redis.sismember('failed_queues', specHelper.namespace + ":" + specHelper.queue + "_failed").should.be.true;
         done();
       });
 
